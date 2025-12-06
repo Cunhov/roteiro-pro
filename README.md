@@ -389,10 +389,27 @@ tar -czf backup-$(date +%Y%m%d).tar.gz .
 
 | Variável | Descrição | Exemplo | Obrigatório |
 |----------|-----------|---------|-------------|
-| `GEMINI_API_KEY` | Chave da API do Google Gemini | `AIzaSy...` | ✅ Sim |
-| `VITE_GEMINI_API_KEY` | Alias para build (Docker) | `AIzaSy...` | ✅ Sim (Docker) |
+| `VITE_GEMINI_API_KEY` | Chave da API do Google Gemini | `AIzaSy...` | ✅ Sim |
+| `GEMINI_API_KEY` | Alias para Docker (sem VITE_) | `AIzaSy...` | ✅ Sim (Docker) |
+| `VITE_ELEVENLABS_API_KEY` | Chave da API do ElevenLabs | `sk_...` | ⚠️ Opcional |
+| `VITE_ELEVENLABS_VOICE_ID` | ID da voz ElevenLabs | `JBFqn...` | ⚠️ Opcional |
 
-> **Nota**: No desenvolvimento local, use `.env.local`. No Docker, passe via `docker-compose.yml` ou variável de ambiente do sistema.
+> **⚠️ IMPORTANTE - Desenvolvimento Local**
+> 
+> Copie `.env.example` para `.env.local` e preencha suas API keys:
+> ```bash
+> cp .env.example .env.local
+> nano .env.local  # Edite e adicione suas keys
+> ```
+
+> **⚠️ IMPORTANTE - Docker/Easypanel**
+> 
+> No Easypanel ou docker-compose, use `GEMINI_API_KEY` (sem VITE_):
+> ```yaml
+> environment:
+>   - GEMINI_API_KEY=sua_chave_aqui
+> ```
+> O Vite automaticamente mapeia para `VITE_GEMINI_API_KEY` durante o build.
 
 ---
 
