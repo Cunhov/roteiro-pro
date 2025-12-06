@@ -24,12 +24,12 @@ export interface LLMSettings {
   // Advanced Parameters
   enableSearch: boolean; // Grounding
   enableThinking: boolean; // Reasoning/Thinking models
-  
+
   // Specific Generation Parameters
   temperature: number; // 0.0 to 2.0 (Creativity)
   maxOutputTokens: number; // Token limit
   thinkingBudget: number; // For reasoning models (token budget)
-  
+
   // Image Parameters
   imageAspectRatio: '16:9' | '9:16' | '1:1' | '4:3' | '3:4';
   imageResolution: '1024x1024' | 'other';
@@ -37,7 +37,7 @@ export interface LLMSettings {
 
 export const DEFAULT_LLM_SETTINGS: LLMSettings = {
   keys: {
-    gemini: process.env.API_KEY || '',
+    gemini: import.meta.env.VITE_GEMINI_API_KEY || '',
     poe: '',
     openai: '',
     anthropic: '',
@@ -49,7 +49,7 @@ export const DEFAULT_LLM_SETTINGS: LLMSettings = {
   searchProvider: 'gemini',
   modelText: 'gemini-2.5-flash',
   modelImage: 'gemini-3-pro-image-preview',
-  
+
   // Advanced Defaults
   enableSearch: false,
   enableThinking: false,
@@ -66,22 +66,22 @@ export const DEFAULT_LLM_SETTINGS: LLMSettings = {
 export const MODELS_BY_PROVIDER: Record<LLMProvider, { text: string[], image: string[] }> = {
   gemini: {
     text: [
-      'gemini-3-pro-preview',                  
-      'gemini-2.5-pro',                        
-      'gemini-2.5-flash',                      
-      'gemini-2.5-flash-lite',                 
-      'gemini-2.5-flash-preview-09-2025',      
-      'gemini-2.5-flash-lite-preview-09-2025', 
-      'gemini-2.0-flash',                      
-      'gemini-2.5-computer-use-preview', 
-      'gemma-3',                               
+      'gemini-3-pro-preview',
+      'gemini-2.5-pro',
+      'gemini-2.5-flash',
+      'gemini-2.5-flash-lite',
+      'gemini-2.5-flash-preview-09-2025',
+      'gemini-2.5-flash-lite-preview-09-2025',
+      'gemini-2.0-flash',
+      'gemini-2.5-computer-use-preview',
+      'gemma-3',
     ],
     image: [
-      'gemini-3-pro-image-preview',    
-      'gemini-2.5-flash-image',        
-      'imagen-4.0-generate-001',       
-      'imagen-4.0-fast-generate-001',  
-      'veo-3.1-generate-preview',      
+      'gemini-3-pro-image-preview',
+      'gemini-2.5-flash-image',
+      'imagen-4.0-generate-001',
+      'imagen-4.0-fast-generate-001',
+      'veo-3.1-generate-preview',
       'veo-3.1-fast-generate-preview'
     ]
   },
@@ -113,67 +113,67 @@ export const MODELS_BY_PROVIDER: Record<LLMProvider, { text: string[], image: st
   },
   openai: {
     text: [
-      'gpt-5.1',                
-      'gpt-5.1-codex',          
-      'gpt-5-pro',              
-      'gpt-5',                  
-      'gpt-5-mini',             
-      'gpt-5-nano',             
-      'o3-pro',                 
-      'o3',                     
-      'o3-deep-research',       
-      'o4-mini',                
-      'gpt-4.1',                
-      'gpt-4o',                 
-      'computer-use-preview'    
+      'gpt-5.1',
+      'gpt-5.1-codex',
+      'gpt-5-pro',
+      'gpt-5',
+      'gpt-5-mini',
+      'gpt-5-nano',
+      'o3-pro',
+      'o3',
+      'o3-deep-research',
+      'o4-mini',
+      'gpt-4.1',
+      'gpt-4o',
+      'computer-use-preview'
     ],
     image: [
-      'gpt-image-1',        
-      'gpt-image-1-mini',   
-      'sora-2',             
-      'dall-e-3'            
+      'gpt-image-1',
+      'gpt-image-1-mini',
+      'sora-2',
+      'dall-e-3'
     ]
   },
   grok: {
     text: [
-      'grok-4.1-fast',             
-      'grok-4-1-fast-reasoning',   
-      'grok-code-fast-1',          
-      'grok-4-fast-reasoning',     
-      'grok-3',                    
-      'grok-3-mini',               
-      'grok-2-vision-1212'         
+      'grok-4.1-fast',
+      'grok-4-1-fast-reasoning',
+      'grok-code-fast-1',
+      'grok-4-fast-reasoning',
+      'grok-3',
+      'grok-3-mini',
+      'grok-2-vision-1212'
     ],
     image: [
-      'grok-2-image-1212'          
+      'grok-2-image-1212'
     ]
   },
   anthropic: {
     text: [
-      'claude-4.5-opus',   
-      'claude-4.1-opus',   
-      'claude-4.5-sonnet', 
-      'claude-4.5-haiku',  
+      'claude-4.5-opus',
+      'claude-4.1-opus',
+      'claude-4.5-sonnet',
+      'claude-4.5-haiku',
       'claude-3.5-haiku'
     ],
-    image: [] 
+    image: []
   },
   deepseek: {
     text: [
-      'deepseek-chat',          
-      'deepseek-reasoner',            
+      'deepseek-chat',
+      'deepseek-reasoner',
       'deepseek-v3.2-speciale'
     ],
     image: [
-      'janus-pro' 
+      'janus-pro'
     ]
   }
 };
 
 // Flattened list for legacy support if needed
 export const AVAILABLE_MODELS = {
-    text: Object.values(MODELS_BY_PROVIDER).flatMap(p => p.text),
-    image: Object.values(MODELS_BY_PROVIDER).flatMap(p => p.image)
+  text: Object.values(MODELS_BY_PROVIDER).flatMap(p => p.text),
+  image: Object.values(MODELS_BY_PROVIDER).flatMap(p => p.image)
 };
 
 // --- Script Generator Types ---
@@ -182,7 +182,7 @@ export interface ScriptConfiguration {
   topic: string;
   transcription: string;
   videoCover: string | null; // Base64
-  
+
   // Specific Inputs
   channelName: string;
   narratorName: string; // Optional for Dark
