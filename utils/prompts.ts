@@ -9,8 +9,8 @@ import { ScriptConfiguration } from "../types";
 // =========================================================================
 
 export const getStep1Prompt = (config: ScriptConfiguration) => {
-  const isAuthority = config.channelType === 'authority';
-  const contextBase = `
+    const isAuthority = config.channelType === 'authority';
+    const contextBase = `
     **CONTEXTO GERAL:**
     - **Idioma Alvo:** ${config.targetLanguage} (Adapte TODAS as gírias, referências culturais e moeda para este local).
     - **Nome do Canal:** ${config.channelName || 'Não Informado'}
@@ -20,8 +20,8 @@ export const getStep1Prompt = (config: ScriptConfiguration) => {
     ${config.transcription ? `\n**Transcrição Base Disponível:** Sim` : ''}
   `;
 
-  if (isAuthority) {
-    return `
+    if (isAuthority) {
+        return `
     # PROMPT 1 - ESTRUTURA DE AUTORIDADE
     ${contextBase}
     - **Apresentador:** ${config.narratorName || 'Especialista'} (Expert/Mentor)
@@ -32,8 +32,8 @@ export const getStep1Prompt = (config: ScriptConfiguration) => {
     Retorne apenas o esquema estrutural em texto.
     ${config.transcription ? `\n**USE ESTA TRANSCRIÇÃO COMO FONTE:**\n${config.transcription.substring(0, 5000)}...` : ''}
     `;
-  } else {
-    return `
+    } else {
+        return `
     # PROMPT 1 - ESTRUTURA DOCUMENTAL (DARK CHANNEL)
     ${contextBase}
     ## SUA MISSÃO
@@ -43,7 +43,7 @@ export const getStep1Prompt = (config: ScriptConfiguration) => {
     Retorne apenas o esquema estrutural em texto.
     ${config.transcription ? `\n**USE ESTA TRANSCRIÇÃO COMO FONTE:**\n${config.transcription.substring(0, 5000)}...` : ''}
     `;
-  }
+    }
 };
 
 export const getStep2Prompt = (config: ScriptConfiguration, prevResult: string) => `
@@ -84,20 +84,101 @@ export const getStep5Prompt = (config: ScriptConfiguration, partialScript: strin
 `;
 
 export const getStep6Prompt = (config: ScriptConfiguration, script: string) => `
-    # PROMPT 6 - AUDITORIA DE CONTEÚDO
-    Verifique idioma, tom, CTAs e naturalidade.
-    ROTEIRO: ${script}
+    # PROMPT 6 - AUDITORIA E CORREÇÃO FINAL
+    **IDIOMA OBRIGATÓRIO:** ${config.targetLanguage}
+    **TOM DE VOZ:** ${config.scriptStyle}
+    
+    ## SUA MISSÃO
+    Você é um Auditor de Roteiros para Narração AI (ElevenLabs).
+    
+    ## TAREFA
+    1. Analise o roteiro abaixo e identifique ERROS CRÍTICOS:
+       - Placeholders genéricos ([NOME], {MARCA}, etc.)
+       - Tags de cena não suportadas ([PAUSA], [RISOS], etc.)
+       - URLs ou emails em formato digital
+       - Abreviações não expandidas (Dr., Prof., etc.)
+       - CTAs mal posicion ados ou confusos
+       
+    2. **SE HOUVER ERROS**: Reescreva o roteiro completo já CORRIGIDO
+    3. **SE NÃO HOUVER ERROS**: Retorne o texto "✅ APROVADO - Roteiro sem erros" seguido do roteiro original
+    
+    ## FORMATO DE SAÍDA
+    RETORNE APENAS O ROTEIRO FINAL (corrigido ou aprovado), SEM comentários, sem explicações, sem análises.
+    Se houver correções, já incorpore no texto retornado.
+    
+    ## ROTEIRO PARA AUDITAR:
+    ${script.substring(0, 50000)}
 `;
 
 export const getStep7Prompt = (config: ScriptConfiguration, fullScript: string) => `
-    Assistente de SSML ElevenLabs. Normalize e adicione tags.
-    INPUT: ${fullScript}
+    # PROMPT 7 - NORMALIZAÇÃO SSML PARA ELEVENLABS
+    **IDIOMA OBRIGATÓRIO:** ${config.targetLanguage}
+    
+    ## SUA MISSÃO
+    Você é um especialista em formatação SSML para síntese de voz (ElevenLabs).
+    
+    ## TAREFA
+    Transforme o roteiro abaixo em formato SSML otimizado, seguindo estas regras:
+    
+    ### 1. ESTRUTURA SSML:
+    - Envolva TUDO em \`<speak>\`...\`</speak>\`
+    - Use \`<p>\` para parágrafos principais
+    - Use \`<s>\` para sentenças/frases dentro de cada parágrafo
+    
+    ### 2. PAUSAS ESTRATÉGICAS:
+    - Entre parágrafos: \`<break time="0.8s"/>\` ou \`<break time="1s"/>\`
+    - Antes de revelações/pontos importantes: \`<break time="1.2s"/>\` 
+    - Após CTAs: \`<break time="1.5s"/>\`
+    - NÃO use pausas dentro de sentenças curtas
+    
+    ### 3. ÊNFASE:
+    - Palavras-chave ou números importantes: \`<emphasis level="strong">texto</emphasis>\`
+    - Títulos de produtos/nomes próprios: \`<emphasis level="moderate">BIOLIFT</emphasis>\`
+    - Use com moderação (máximo 5-8 vezes no roteiro todo)
+    
+    ### 4. NÚMEROS E DATAS:
+    - Escreva números por extenso: "três meses" NÃO "3 meses"  
+    - Datas: "seis de dezembro de dois mil e vinte e cinco" NÃO "06/12/2025"
+    - Porcentagens: "setenta por cento" NÃO "70%"
+    
+    ### 5. PROIBIÇÕES:
+    - ❌ NÃO use tags \`<prosody>\`, \`<voice>\`, \`<sub>\` (não suportadas)
+    - ❌ NÃO inclua comentários HTML \`<!-- -->\`
+    - ❌ NÃO adicione instruções de cena ([PAUSA], [RISOS], etc.)
+    - ❌ NÃO quebre no meio de frases
+    
+    ### 6. VALIDAÇÃO FINAL:
+    - Remova URLs/emails: transforme em texto falado ("acesse nosso site growth suplementos ponto com")
+    - Expanda abreviações: "Dr." → "Doutor", "Prof." → "Professor"
+    - Remover símbolos: R$, $, %, etc. → escrever por extenso
+    
+    ## FORMATO DE SAÍDA
+    RETORNE APENAS O SSML COMPLETO E VÁLIDO. Não inclua explicações antes ou depois.
+    Comece com \`<speak>\` e termine com \`</speak>\`.
+    
+    ## ROTEIRO PARA NORMALIZAR:
+    ${fullScript.substring(0, 50000)}
 `;
 
 export const getPromptFix = (roteiroComErros: string, listaErros: string[]) => `
-    # PROMPT DE CORREÇÃO
-    Corrija: ${listaErros.join('\n')}
-    Roteiro: ${roteiroComErros}
+    # PROMPT DE CORREÇÃO AUTOMÁTICA
+    
+    ## ERROS DETECTADOS:
+    ${listaErros.map((erro, i) => `${i + 1}. ${erro}`).join('\n')}
+    
+    ## SUA TAREFA:
+    Corrija TODOS os erros listados acima no roteiro abaixo.
+    
+    **IMPORTANTE**: 
+    - Retorne APENAS o roteiro corrigido completo
+    - NÃO inclua explicações, comentários ou análises
+    - Mantenha a estrutura e flow do roteiro original
+    - Corrija apenas os problemas identificados
+    
+    ## ROTEIRO COM ERROS:
+    ${roteiroComErros.substring(0, 50000)}
+    
+    ## RETORNE APENAS O ROTEIRO CORRIGIDO:
 `;
 
 export const getNicheExtractionPrompt = (textoEntrada: string) => `
