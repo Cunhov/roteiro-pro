@@ -1,8 +1,8 @@
 import { GoogleGenAI, HarmCategory, HarmBlockThreshold } from "@google/genai";
 
 // Initialize Gemini Client
-// Note: We use import.meta.env for Vite environment variables
-const apiKey = import.meta.env.VITE_GEMINI_API_KEY || '';
+// Note: We use process.env.API_KEY as strictly required.
+const apiKey = process.env.API_KEY || '';
 const ai = new GoogleGenAI({ apiKey });
 
 // Contents can be a simple string or an object/array for multimodal inputs

@@ -9,11 +9,8 @@ services:
     ports:
       - "3000:80"
     environment:
-      # Gemini API key - required
+      # API key will be loaded from .env.local file or passed at runtime
       - VITE_GEMINI_API_KEY=${GEMINI_API_KEY}
-      # ElevenLabs - optional (for audio generation)
-      - VITE_ELEVENLABS_API_KEY=${ELEVENLABS_API_KEY:-}
-      - VITE_ELEVENLABS_VOICE_ID=${ELEVENLABS_VOICE_ID:-}
     restart: unless-stopped
     healthcheck:
       test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/" ]

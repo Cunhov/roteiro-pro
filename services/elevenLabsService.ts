@@ -9,11 +9,11 @@ export interface ElevenLabsSettings {
   text: string;
 }
 
-const API_KEY = import.meta.env.VITE_ELEVENLABS_API_KEY || '';
+const API_KEY = process.env.REACT_APP_ELEVENLABS_API_KEY || 'sk_ebd10c91bcf9d2bfcb1d487153e3547a9943aaf67bf55f35';
 
 export const generateElevenLabsAudio = async (settings: ElevenLabsSettings): Promise<Blob> => {
   if (!API_KEY) {
-    throw new Error("Chave da API ElevenLabs não encontrada. Configure VITE_ELEVENLABS_API_KEY no arquivo .env.local");
+    throw new Error("Chave da API ElevenLabs não encontrada no arquivo .env (REACT_APP_ELEVENLABS_API_KEY)");
   }
 
   // Mapeamento dos settings para o corpo da requisição
@@ -60,7 +60,7 @@ export const ELEVENLABS_MODELS = [
 
 // Lista de vozes (pode ser expandida ou buscada da API no futuro)
 export const DEFAULT_VOICES = [
-  { id: import.meta.env.VITE_ELEVENLABS_VOICE_ID || 'JBFqnCBsd6RMkjVDRZzb', name: 'Daniel Cunha (Principal)' },
+  { id: process.env.REACT_APP_ELEVENLABS_VOICE_ID || 'JBFqnCBsd6RMkjVDRZzb', name: 'Daniel Cunha (Principal)' },
   { id: 'ErXwobaYiN019PkySvjV', name: 'Antoni' },
   { id: '21m00Tcm4TlvDq8ikWAM', name: 'Rachel' },
   { id: 'AZnzlk1XvdvUeBnXmlld', name: 'Domi' },

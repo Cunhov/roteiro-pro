@@ -37,7 +37,7 @@ export interface LLMSettings {
 
 export const DEFAULT_LLM_SETTINGS: LLMSettings = {
   keys: {
-    gemini: import.meta.env.VITE_GEMINI_API_KEY || '',
+    gemini: process.env.API_KEY || '',
     poe: '',
     openai: '',
     anthropic: '',
