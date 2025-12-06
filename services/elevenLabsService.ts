@@ -9,7 +9,7 @@ export interface ElevenLabsSettings {
   text: string;
 }
 
-const API_KEY = process.env.REACT_APP_ELEVENLABS_API_KEY || 'sk_ebd10c91bcf9d2bfcb1d487153e3547a9943aaf67bf55f35';
+const API_KEY = process.env.REACT_APP_ELEVENLABS_API_KEY || '';
 
 export const generateElevenLabsAudio = async (settings: ElevenLabsSettings): Promise<Blob> => {
   if (!API_KEY) {
