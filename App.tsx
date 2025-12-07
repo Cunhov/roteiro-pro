@@ -175,6 +175,7 @@ const App: React.FC = () => {
       }));
 
     } catch (err: any) {
+      logger.error("Script generation failed", { error: err.message, stack: err.stack });
       setScriptState(prev => ({
         ...prev,
         isProcessing: false,
@@ -203,6 +204,7 @@ const App: React.FC = () => {
         results: [...prev.results, `✨ Estilo Daniel Cunha aplicado!`]
       }));
     } catch (err: any) {
+      logger.error("Failed to apply Daniel Cunha style", { error: err.message });
       alert(`Erro ao aplicar estilo: ${err.message}`);
     } finally {
       setIsApplyingDanielCunha(false);
@@ -242,6 +244,7 @@ const App: React.FC = () => {
         results: [...prev.results, `🎙️ SSML formatado para ElevenLabs!`]
       }));
     } catch (err: any) {
+      logger.error("Failed to generate SSML", { error: err.message });
       alert(`Erro ao gerar SSML: ${err.message}`);
     } finally {
       setIsApplyingSSML(false);

@@ -7,7 +7,7 @@ import { logger } from '../utils/logger';
 import JSZip from 'jszip'; // Using CDN version via type augmentation or implicit global
 
 // Declare JSZip for TypeScript if not installed via npm (CDN usage)
-declare const JSZip: any;
+
 
 interface BRollCreatorProps {
     llmGateway: LLMGateway;

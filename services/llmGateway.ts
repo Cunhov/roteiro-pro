@@ -1,6 +1,7 @@
 
 import { GoogleGenAI, HarmCategory, HarmBlockThreshold } from "@google/genai";
 import { LLMSettings, LLMProvider } from "../types";
+import { logger } from "../utils/logger";
 
 /**
  * Universal Gateway for LLM Calls.
@@ -41,19 +42,50 @@ export class LLMGateway {
     async generateText(prompt: string, systemInstruction?: string): Promise<string> {
         const provider = this.settings.textProvider;
 
-        switch (provider) {
-            case 'gemini':
-                return this.generateGeminiText(prompt, systemInstruction);
-            case 'poe':
-                return this.generatePoeText(prompt, systemInstruction);
-            case 'openai':
-            case 'deepseek':
-            case 'grok':
-                return this.generateOpenAICompatibleText(provider, prompt, systemInstruction);
-            case 'anthropic':
-                return this.generateAnthropicText(prompt, systemInstruction);
-            default:
-                throw new Error(`Provider ${provider} not supported yet.`);
+        logger.info(`[LLM] Text generation request`, {
+            provider,
+            model: this.settings.modelText,
+            promptLength: prompt.length,
+            promptPreview: prompt.substring(0, 200),
+            hasSystemInstruction: !!systemInstruction
+        });
+
+        try {
+            let response: string;
+
+            switch (provider) {
+                case 'gemini':
+                    response = await this.generateGeminiText(prompt, systemInstruction);
+                    break;
+                case 'poe':
+                    response = await this.generatePoeText(prompt, systemInstruction);
+                    break;
+                case 'openai':
+                case 'deepseek':
+                case 'grok':
+                    response = await this.generateOpenAICompatibleText(provider, prompt, systemInstruction);
+                    break;
+                case 'anthropic':
+                    response = await this.generateAnthropicText(prompt, systemInstruction);
+                    break;
+                default:
+                    throw new Error(`Provider ${provider} not supported yet.`);
+            }
+
+            logger.info(`[LLM] Text generation success`, {
+                provider,
+                responseLength: response.length,
+                responsePreview: response.substring(0, 200)
+            });
+
+            return response;
+        } catch (error: any) {
+            logger.error(`[LLM] Text generation failed`, {
+                provider,
+                error: error.message,
+                stack: error.stack
+            });
+            throw error;
         }
     }
 
@@ -63,15 +95,46 @@ export class LLMGateway {
     async generateImage(prompt: string, refImages?: string[]): Promise<string> {
         const provider = this.settings.imageProvider;
 
-        switch (provider) {
-            case 'gemini':
-                return this.generateGeminiImage(prompt, refImages);
-            case 'poe':
-                return this.generatePoeImage(prompt);
-            case 'openai':
-                return this.generateOpenAIImage(prompt);
-            default:
-                throw new Error(`Image generation for provider '${provider}' is not currently supported or implemented.`);
+        logger.info(`[LLM] Image generation request`, {
+            provider,
+            model: this.settings.modelImage,
+            promptLength: prompt.length,
+            prompt: prompt,
+            refImagesCount: refImages?.length || 0,
+            aspectRatio: this.settings.imageAspectRatio
+        });
+
+        try {
+            let imageUrl: string;
+
+            switch (provider) {
+                case 'gemini':
+                    imageUrl = await this.generateGeminiImage(prompt, refImages);
+                    break;
+                case 'poe':
+                    imageUrl = await this.generatePoeImage(prompt);
+                    break;
+                case 'openai':
+                    imageUrl = await this.generateOpenAIImage(prompt);
+                    break;
+                default:
+                    throw new Error(`Image generation for provider '${provider}' is not currently supported or implemented.`);
+            }
+
+            logger.info(`[LLM] Image generation success`, {
+                provider,
+                imageUrl: imageUrl.substring(0, 100)
+            });
+
+            return imageUrl;
+        } catch (error: any) {
+            logger.error(`[LLM] Image generation failed`, {
+                provider,
+                prompt,
+                error: error.message,
+                stack: error.stack
+            });
+            throw error;
         }
     }
 
@@ -81,12 +144,35 @@ export class LLMGateway {
     async searchImages(query: string): Promise<string[]> {
         const provider = this.settings.searchProvider;
 
-        if (provider === 'gemini') {
-            return this.searchGeminiImages(query);
+        logger.info(`[LLM] Image search request`, {
+            provider,
+            query
+        });
+
+        try {
+            let urls: string[] = [];
+
+            if (provider === 'gemini') {
+                urls = await this.searchGeminiImages(query);
+            } else {
+                logger.warn(`[LLM] Search/Grounding only optimized for Gemini`, { provider });
+            }
+
+            logger.info(`[LLM] Image search complete`, {
+                provider,
+                query,
+                resultsCount: urls.length
+            });
+
+            return urls;
+        } catch (error: any) {
+            logger.error(`[LLM] Image search failed`, {
+                provider,
+                query,
+                error: error.message
+            });
+            return [];
         }
-        // Future: Implement Serper/Google Search API for other providers
-        console.warn("Search/Grounding is currently only optimized for Gemini.");
-        return [];
     }
 
     // =================================================================================
