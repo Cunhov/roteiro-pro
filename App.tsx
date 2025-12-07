@@ -76,6 +76,12 @@ const App: React.FC = () => {
   const [isAudioModalOpen, setIsAudioModalOpen] = useState(false);
   const [audioInitialText, setAudioInitialText] = useState('');
 
+  // Optional transformations state
+  const [danielCunhaScript, setDanielCunhaScript] = useState<string | null>(null);
+  const [ssmlScript, setSSMLScript] = useState<string | null>(null);
+  const [isApplyingDanielCunha, setIsApplyingDanielCunha] = useState(false);
+  const [isApplyingSSML, setIsApplyingSSML] = useState(false);
+
   const updateConfig = (newConfig: React.SetStateAction<ScriptConfiguration>) => {
     if (typeof newConfig === 'function') {
       setScriptState(prev => ({ ...prev, config: newConfig(prev.config) }));
@@ -147,23 +153,12 @@ const App: React.FC = () => {
         updateResult(4, r4 + `\n✅ [Script corrigido ${attempts}x]`);
       }
 
-      // Step 5: SSML Formatting (was Step 7)
-      const r5 = await llmGateway.generateText(getStep5Prompt(config, finalScript));
-      updateResult(5, r5);
-
-      // Generate JSON
-      const generator = new GeradorRoteiroJSON();
-      const json = generator.gerarJSON(config.topic || "Tema Gerado", r5, {
-        apresentador: config.narratorName,
-        canal: config.channelName,
-        idioma: config.targetLanguage
-      });
-
+      // Pipeline completo! Agora usuário pode aplicar transformações opcionais
       setScriptState(prev => ({
         ...prev,
         isProcessing: false,
         isComplete: true,
-        finalJson: json
+        finalJson: null // Será gerado quando aplicar SSML
       }));
 
     } catch (err: any) {
@@ -172,6 +167,71 @@ const App: React.FC = () => {
         isProcessing: false,
         error: err.message || "Erro desconhecido."
       }));
+    }
+  };
+
+  // Optional: Apply Daniel Cunha Style
+  const applyDanielCunhaStyle = async () => {
+    if (!scriptState.isComplete || scriptState.results.length < 4) {
+      alert("Aguarde o roteiro base ser gerado primeiro!");
+      return;
+    }
+
+    setIsApplyingDanielCunha(true);
+    try {
+      // Get the base script (step 4 result)
+      const baseScript = scriptState.results[3] || "";
+
+      const danielStyled = await llmGateway.generateText(getDanielCunhaStylePrompt(baseScript));
+      setDanielCunhaScript(danielStyled);
+
+      setScriptState(prev => ({
+        ...prev,
+        results: [...prev.results, `✨ Estilo Daniel Cunha aplicado!`]
+      }));
+    } catch (err: any) {
+      alert(`Erro ao aplicar estilo: ${err.message}`);
+    } finally {
+      setIsApplyingDanielCunha(false);
+    }
+  };
+
+  // Optional: Apply SSML Formatting
+  const applySSMLFormatting = async () => {
+    if (!scriptState.isComplete || scriptState.results.length < 4) {
+      alert("Aguarde o roteiro base ser gerado primeiro!");
+      return;
+    }
+
+    setIsApplyingSSML(true);
+    try {
+      // Use Daniel Cunha version if available, otherwise base script
+      const scriptToFormat = danielCunhaScript || scriptState.results[3] || "";
+
+      const ssmlFormatted = await llmGateway.generateText(getSSMLFormattingPrompt(scriptToFormat));
+      setSSMLScript(ssmlFormatted);
+
+      // Generate JSON with SSML version
+      const generator = new GeradorRoteiroJSON();
+      const json = generator.gerarJSON(
+        scriptState.config.topic || "Tema Gerado",
+        ssmlFormatted,
+        {
+          apresentador: scriptState.config.narratorName,
+          canal: scriptState.config.channelName,
+          idioma: scriptState.config.targetLanguage
+        }
+      );
+
+      setScriptState(prev => ({
+        ...prev,
+        finalJson: json,
+        results: [...prev.results, `🎙️ SSML formatado para ElevenLabs!`]
+      }));
+    } catch (err: any) {
+      alert(`Erro ao gerar SSML: ${err.message}`);
+    } finally {
+      setIsApplyingSSML(false);
     }
   };
 
@@ -285,6 +345,82 @@ const App: React.FC = () => {
                     ))}
                   </div>
                 </div>
+
+                {/* OPTIONAL POST-PROCESSING BUTTONS */}
+                {scriptState.isComplete && !scriptState.finalJson && (
+                  <div className="bg-gradient-to-r from-purple-900/20 to-blue-900/20 p-6 rounded-xl border border-purple-700/30 mt-6">
+                    <h3 className="font-bold text-white mb-3 flex items-center gap-2">
+                      <span>🎨</span>
+                      Transformações Opcionais
+                    </h3>
+                    <p className="text-slate-400 text-sm mb-4">
+                      Seu roteiro base está pronto! Aplique transformações adicionais:
+                    </p>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Daniel Cunha Style Button */}
+                      <button
+                        onClick={applyDanielCunhaStyle}
+                        disabled={isApplyingDanielCunha || !!danielCunhaScript}
+                        className={`p-4 rounded-lg border-2 transition-all ${danielCunhaScript
+                            ? 'bg-green-900/30 border-green-600 cursor-default'
+                            : 'bg-slate-800 border-purple-600 hover:bg-purple-900/40 hover:border-purple-500'
+                          } ${isApplyingDanielCunha ? 'opacity-50 cursor-wait' : ''}`}
+                      >
+                        <div className="flex items-center gap-3 mb-2">
+                          <span className="text-2xl">🔥</span>
+                          <h4 className="font-bold text-white">
+                            {danielCunhaScript ? '✅ Estilo Aplicado' : 'Aplicar Estilo Daniel Cunha'}
+                          </h4>
+                        </div>
+                        <p className="text-xs text-slate-400">
+                          {isApplyingDanielCunha
+                            ? 'Transformando...'
+                            : danielCunhaScript
+                              ? 'Roteiro transformado no tom masculino/direto característico'
+                              : 'Transforma o roteiro no tom masculino, direto e prático característico'}
+                        </p>
+                      </button>
+
+                      {/* SSML Formatting Button */}
+                      <button
+                        onClick={applySSMLFormatting}
+                        disabled={isApplyingSSML || !!ssmlScript}
+                        className={`p-4 rounded-lg border-2 transition-all ${ssmlScript
+                            ? 'bg-green-900/30 border-green-600 cursor-default'
+                            : 'bg-slate-800 border-blue-600 hover:bg-blue-900/40 hover:border-blue-500'
+                          } ${isApplyingSSML ? 'opacity-50 cursor-wait' : ''}`}
+                      >
+                        <div className="flex items-center gap-3 mb-2">
+                          <span className="text-2xl">🎙️</span>
+                          <h4 className="font-bold text-white">
+                            {ssmlScript ? '✅ SSML Gerado' : 'Gerar SSML para ElevenLabs'}
+                          </h4>
+                        </div>
+                        <p className="text-xs text-slate-400">
+                          {isApplyingSSML
+                            ? 'Formatando para síntese de voz...'
+                            : ssmlScript
+                              ? 'Roteiro normalizado e otimizado para ElevenLabs'
+                              : 'Formata o roteiro com tags SSML, normaliza números e símbolos'}
+                        </p>
+                      </button>
+                    </div>
+
+                    {(danielCunhaScript || ssmlScript) && (
+                      <div className="mt-4 p-3 bg-slate-800/50 rounded border border-slate-700">
+                        <p className="text-xs text-slate-300">
+                          💡 <strong>Dica:</strong> {
+                            danielCunhaScript && !ssmlScript
+                              ? 'Agora você pode gerar o SSML com base no estilo Daniel Cunha!'
+                              : 'Use os botões acima (Copiar, PDF, Áudio) na seção "Roteiro Final" abaixo.'
+                          }
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {scriptState.isComplete && scriptState.finalJson && (
                   <div className="bg-slate-900 p-6 rounded-xl border border-slate-800">
                     <div className="flex justify-between mb-4">

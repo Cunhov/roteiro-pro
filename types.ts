@@ -281,13 +281,12 @@ export interface StepDefinition {
   description: string;
 }
 
-// Passos do Gerador de Roteiro (OPTIMIZED PIPELINE - 5 Steps)
+// Passos do Gerador de Roteiro (OPTIMIZED PIPELINE - 4 Steps)
 export const PROCESSING_STEPS: StepDefinition[] = [
   { id: 1, title: 'Estratégia & Estrutura', description: 'Definindo ângulo, duração e ganchos culturais...' },
   { id: 2, title: 'Roteiro: Introdução', description: 'Criando Gancho Viral e Problema...' },
   { id: 3, title: 'Roteiro: Desenvolvimento', description: 'Conteúdo principal (Autoridade ou Narrativa)...' },
   { id: 4, title: 'Finalização Completa', description: 'Produto CTA + Patrocínio + Conclusão...' },
-  { id: 5, title: 'Formatação SSML', description: 'Otimizando para ElevenLabs com pausas e ênfases...' },
 ];
 
 // Passos do Analisador de Nichos
