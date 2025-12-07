@@ -3,8 +3,16 @@
  * Re-exports all prompts from modular structure
  */
 
-// Script Generator (Optimized 5-Step Pipeline)
-export * from './script-generator';
+// Script Generator (Optimized 4-Step Pipeline + Optional Post-Processing)
+export {
+    getStep1Prompt,
+    getStep2Prompt,
+    getStep3Prompt,
+    getStep4Prompt,
+    getSSMLFormattingPrompt,
+    getDanielCunhaStylePrompt,
+    getPromptFix
+} from './script-generator';
 
 // Niche Analyzer
 export * from './niche-analyzer';

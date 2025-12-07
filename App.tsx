@@ -20,7 +20,8 @@ import {
   getStep2Prompt,
   getStep3Prompt,
   getStep4Prompt,
-  getStep5Prompt,
+  getSSMLFormattingPrompt,
+  getDanielCunhaStylePrompt,
   getPromptFix
 } from './utils/prompts';
 
