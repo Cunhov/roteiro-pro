@@ -87,28 +87,93 @@ export const MODELS_BY_PROVIDER: Record<LLMProvider, { text: string[], image: st
   },
   poe: {
     text: [
+      // OpenAI Models
+      'gpt-5.1',
+      'gpt-5.1-codex',
+      'gpt-5-pro',
       'GPT-5',
+      'gpt-5-mini',
+      'gpt-5-nano',
+      'o3-pro',
+      'o3',
+      'o3-mini',
+      'o3-deep-research',
+      'o4-mini',
+      'gpt-4.1',
+      'gpt-4o',
+      'computer-use-preview',
+      // Anthropic Models  
       'Claude-3.5-Sonnet',
       'Claude-3-Opus',
       'Claude-Opus-4.1',
+      'claude-4-sonnet',
+      'claude-4-opus',
+      'claude-3.5-sonnet-thinking',
+      'claude-3.7-sonnet',
+      'claude-3-haiku',
+      // Gemini Models
       'Gemini-2.5-Pro',
       'Gemini-1.5-Pro',
+      'gemini-3-pro-preview',
+      'gemini-2.5-flash',
+      'gemini-2.5-flash-lite',
+      'gemini-2.5-flash-preview-09-2025',
+      'gemini-2.5-flash-lite-preview-09-2025',
+      'gemini-2.0-flash',
+      'gemini-2.5-computer-use-preview',
+      'gemma-3',
+      // Meta Llama Models
       'Llama-3.1-405B',
       'Llama-3.1-70B',
+      'llama-3.3-70b',
+      'llama-4-405b',
+      'llama-4-70b-instruct',
+      'llama-guard-4',
+      // Grok Models
       'Grok-4',
-      'o3-mini',
+      'grok-4.1-fast',
+      'grok-4-1-fast-reasoning',
+      'grok-code-fast-1',
+      'grok-4-fast-reasoning',
+      'grok-3',
+      'grok-3-mini',
+      'grok-2-vision-1212',
+      // DeepSeek Models
       'DeepSeek-R1',
-      'Qwen-2.5-Coder-32B'
+      'deepseek-r1-distill-llama-70b',
+      'deepseek-v3',
+      'deepseek-coder-v3',
+      'deepseek-chat',
+      // Other Models
+      'Qwen-2.5-Coder-32B',
+      'mistral-large-2411',
+      'mistral-small-2501'
     ],
     image: [
+      // OpenAI Image Models
+      'gpt-image-1',
+      'gpt-image-1-mini',
+      'GPT-Image-1',
+      'sora-2',
+      'DALL-E-3',
+      'dall-e-3',
+      // Open Source Models
       'Flux-Pro-1.1',
       'Flux-Dev',
-      'Ideogram-v2',
-      'DALL-E-3',
-      'Playground-v3',
       'StableDiffusion-3.5-Large',
+      // Commercial Models
+      'Ideogram-v2',
+      'Playground-v3',
       'Midjourney-v6',
-      'GPT-Image-1'
+      // Google Models
+      'gemini-3-pro-image-preview',
+      'gemini-2.5-flash-image',
+      'imagen-4.0-generate-001',
+      'imagen-4.0-fast-generate-001',
+      'veo-3.1-generate-preview',
+      'veo-3.1-fast-generate-preview',
+      // Grok Models
+      'grok-2-image-1212'
     ]
   },
   openai: {

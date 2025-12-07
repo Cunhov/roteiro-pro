@@ -131,12 +131,14 @@ const Settings: React.FC<SettingsProps> = ({ settings, onSave }) => {
                         <div>
                             <label className="text-xs text-slate-500 font-bold block mb-1">Modelo</label>
                             <select
-                                value={localSettings.modelText}
+                                value={localSettings.modelText === '__custom__' || !MODELS_BY_PROVIDER[localSettings.textProvider]?.text.includes(localSettings.modelText) ? '__custom__' : localSettings.modelText}
                                 onChange={(e) => {
                                     const value = e.target.value;
                                     if (value === '__custom__') {
+                                        setLocalSettings({ ...localSettings, modelText: '__custom__' });
                                         setCustomTextModel('');
                                     } else {
+                                        setCustomTextModel('');
                                         setLocalSettings({ ...localSettings, modelText: value });
                                     }
                                 }}
@@ -153,9 +155,13 @@ const Settings: React.FC<SettingsProps> = ({ settings, onSave }) => {
                                     placeholder="Digite o nome do modelo..."
                                     value={customTextModel}
                                     onChange={(e) => {
-                                        setCustomTextModel(e.target.value);
-                                        setLocalSettings({ ...localSettings, modelText: e.target.value });
+                                        const value = e.target.value;
+                                        setCustomTextModel(value);
+                                        if (value.trim()) {
+                                            setLocalSettings({ ...localSettings, modelText: value });
+                                        }
                                     }}
+                                    autoFocus
                                     className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-white text-xs mt-2 placeholder:text-slate-600"
                                 />
                             )}
@@ -184,12 +190,14 @@ const Settings: React.FC<SettingsProps> = ({ settings, onSave }) => {
                         <div>
                             <label className="text-xs text-slate-500 font-bold block mb-1">Modelo</label>
                             <select
-                                value={localSettings.modelImage}
+                                value={localSettings.modelImage === '__custom__' || !MODELS_BY_PROVIDER[localSettings.imageProvider]?.image.includes(localSettings.modelImage) ? '__custom__' : localSettings.modelImage}
                                 onChange={(e) => {
                                     const value = e.target.value;
                                     if (value === '__custom__') {
+                                        setLocalSettings({ ...localSettings, modelImage: '__custom__' });
                                         setCustomImageModel('');
                                     } else {
+                                        setCustomImageModel('');
                                         setLocalSettings({ ...localSettings, modelImage: value });
                                     }
                                 }}
@@ -206,9 +214,13 @@ const Settings: React.FC<SettingsProps> = ({ settings, onSave }) => {
                                     placeholder="Digite o nome do modelo..."
                                     value={customImageModel}
                                     onChange={(e) => {
-                                        setCustomImageModel(e.target.value);
-                                        setLocalSettings({ ...localSettings, modelImage: e.target.value });
+                                        const value = e.target.value;
+                                        setCustomImageModel(value);
+                                        if (value.trim()) {
+                                            setLocalSettings({ ...localSettings, modelImage: value });
+                                        }
                                     }}
+                                    autoFocus
                                     className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-white text-xs mt-2 placeholder:text-slate-600"
                                 />
                             )}
