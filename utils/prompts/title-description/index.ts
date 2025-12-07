@@ -26,9 +26,9 @@ Crie um parágrafo curto e envolvente (3 a 5 linhas). O objetivo é prender a at
 
 ### **SEÇÃO 2: CAPÍTULOS DO VÍDEO (TIMESTAMPS)**
 Analise a estrutura da transcrição para identificar os principais tópicos e momentos de transição. Crie uma lista de capítulos com timestamps.
-*   **Formato:** `MM: SS Nome do Capítulo Descritivo e com Palavra - Chave`
+*   **Formato:** \`MM: SS Nome do Capítulo Descritivo e com Palavra - Chave\`
 *   **Requisitos:**
-    *   O primeiro timestamp deve ser sempre `00:00`.
+    *   O primeiro timestamp deve ser sempre \`00:00\`.
     *   Crie um capítulo para cada tópico principal abordado no vídeo.
     *   Os nomes dos capítulos devem ser claros, objetivos e otimizados com palavras-chave secundárias quando possível.
 
@@ -63,7 +63,7 @@ Esta é a seção mais importante para a descoberta do vídeo. Seja exaustivo e 
 *   Crie uma lista de 20 a 25 tags otimizadas. Misture palavras-chave principais, de cauda longa, sinônimos, erros de digitação comuns e termos relacionados. As tags devem ser separadas por vírgulas.
 
 **5. Hashtags (para a descrição):**
-*   Sugira 3 a 5 hashtags concisas e relevantes para incluir no corpo ou no final da descrição. Ex: `#DietaCetogenica #PerderPeso #Saude`
+*   Sugira 3 a 5 hashtags concisas e relevantes para incluir no corpo ou no final da descrição. Ex: \`#DietaCetogenica #PerderPeso #Saude\`
 ## INPUT TRANSCRIPTION:
 ${transcription.substring(0, 60000)}
 `;
