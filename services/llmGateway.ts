@@ -246,24 +246,17 @@ export class LLMGateway {
         if (!apiKey) throw new Error("Poe API Key missing.");
 
         try {
-            // POE Official API: parameters go inside the message, not extra_body
-            const response = await fetch('https://api.poe.com/v1/chat/completions', {
+            // POE uses the images/generations endpoint, not chat/completions for images
+            const response = await fetch('https://api.poe.com/v1/images/generations', {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${apiKey}`,
-                    'Content-Type': 'application/json',
-                    'HTTP-Referer': 'https://roteiro-pro.app',
-                    'X-Title': 'Roteiro Pro - Script Generator'
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
                     model: this.settings.modelImage,
-                    messages: [{
-                        role: 'user',
-                        content: prompt,
-                        parameters: {
-                            aspect_ratio: this.settings.imageAspectRatio || "16:9"
-                        }
-                    }]
+                    prompt: prompt,
+                    aspect_ratio: this.settings.imageAspectRatio || "16:9"
                 })
             });
 
@@ -273,155 +266,146 @@ export class LLMGateway {
             }
 
             const data = await response.json();
-            const content = data.choices?.[0]?.message?.content || "";
 
-            // POE returns image in markdown format: ![alt](url) or as attachment
-            const mdMatch = content.match(/!\[.*?\]\((https?:\/\/.*?)\)/);
-            if (mdMatch && mdMatch[1]) return mdMatch[1];
+            // POE returns image URL in data array
+            if (data.data && data.data[0] && data.data[0].url) {
+                return data.data[0].url;
+            }
 
-            // Check for URL in attachments
-            const attachment = data.choices?.[0]?.message?.attachments?.[0];
-            if (attachment?.url) return attachment.url;
-
-            // Fallback: try to find any URL in response
-            const urlMatch = content.match(/https?:\/\/[^\s)]+/);
-            if (urlMatch) return urlMatch[0];
-
-            throw new Error(`No image URL found in Poe response. Content: ${content}`);
+            throw new Error("No image URL found in Poe response.");
         } catch (e: any) {
             throw new Error(`Poe Image Generation Failed: ${e.message}`);
         }
     }
-}
 
     // =================================================================================
     // OPENAI / DEEPSEEK / GROK IMPLEMENTATION (Generic OpenAI-Compatible)
     // =================================================================================
 
-    private async generateOpenAICompatibleText(provider: LLMProvider, prompt: string, systemInstruction ?: string): Promise < string > {
-    const apiKey = this.settings.keys[provider];
-    if(!apiKey) throw new Error(`${provider.toUpperCase()} API Key missing.`);
+    private async generateOpenAICompatibleText(provider: LLMProvider, prompt: string, systemInstruction?: string): Promise<string> {
+        const apiKey = this.settings.keys[provider];
+        if (!apiKey) throw new Error(`${provider.toUpperCase()} API Key missing.`);
 
-    let baseUrl = '';
-    if(provider === 'openai') baseUrl = 'https://api.openai.com/v1';
-if (provider === 'deepseek') baseUrl = 'https://api.deepseek.com';
-if (provider === 'grok') baseUrl = 'https://api.x.ai/v1';
+        let baseUrl = '';
+        if (provider === 'openai') baseUrl = 'https://api.openai.com/v1';
+        if (provider === 'deepseek') baseUrl = 'https://api.deepseek.com';
+        if (provider === 'grok') baseUrl = 'https://api.x.ai/v1';
 
-const messages = [];
-if (systemInstruction) messages.push({ role: 'system', content: systemInstruction });
-messages.push({ role: 'user', content: prompt });
+        const messages = [];
+        if (systemInstruction) messages.push({ role: 'system', content: systemInstruction });
+        messages.push({ role: 'user', content: prompt });
 
-// Clean params for strict providers
-const body: any = {
-    model: this.settings.modelText,
-    messages: messages,
-    temperature: this.settings.temperature,
-    max_tokens: this.settings.maxOutputTokens,
-};
+        // Clean params for strict providers
+        const body: any = {
+            model: this.settings.modelText,
+            messages: messages,
+            temperature: this.settings.temperature,
+            max_tokens: this.settings.maxOutputTokens,
+        };
 
-// DeepSeek Specifics
-if (provider === 'deepseek' && this.settings.modelText.includes('reasoner')) {
-    delete body.temperature; // R1 doesn't support temp usually
-}
+        // DeepSeek Specifics
+        if (provider === 'deepseek' && this.settings.modelText.includes('reasoner')) {
+            delete body.temperature; // R1 doesn't support temp usually
+        }
 
-try {
-    const response = await fetch(`${baseUrl}/chat/completions`, {
-        method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${apiKey}`,
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(body)
-    });
+        try {
+            const response = await fetch(`${baseUrl}/chat/completions`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${apiKey}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(body)
+            });
 
-    if (!response.ok) {
-        const err = await response.text();
-        throw new Error(`${provider.toUpperCase()} API Error (${response.status}): ${err}`);
+            if (!response.ok) {
+                const err = await response.text();
+                throw new Error(`${provider.toUpperCase()} API Error (${response.status}): ${err}`);
+            }
+
+            const data = await response.json();
+            // DeepSeek sometimes puts reasoning in 'reasoning_content'
+            const content = data.choices?.[0]?.message?.content || "";
+            const reasoning = data.choices?.[0]?.message?.reasoning_content;
+
+            if (reasoning && this.settings.enableThinking) {
+                return `[Thinking Process]\n${reasoning}\n\n[Response]\n${content}`;
+            }
+
+            return content;
+        } catch (e: any) {
+            throw new Error(`${provider} Generation Failed: ${e.message}`);
+        }
     }
 
-    const data = await response.json();
-    // DeepSeek sometimes puts reasoning in 'reasoning_content'
-    const content = data.choices?.[0]?.message?.content || "";
-    const reasoning = data.choices?.[0]?.message?.reasoning_content;
+    private async generateOpenAIImage(prompt: string): Promise<string> {
+        const apiKey = this.settings.keys.openai;
+        if (!apiKey) throw new Error("OpenAI API Key missing.");
 
-    if (reasoning && this.settings.enableThinking) {
-        return `[Thinking Process]\n${reasoning}\n\n[Response]\n${content}`;
+        try {
+            const response = await fetch('https://api.openai.com/v1/images/generations', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${apiKey}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    model: "dall-e-3", // Force DALL-E 3 for quality
+                    prompt: prompt,
+                    n: 1,
+                    size: "1024x1024",
+                    quality: "standard"
+                })
+            });
+
+            if (!response.ok) throw new Error(`OpenAI Image Error: ${response.status}`);
+            const data = await response.json();
+            return data.data?.[0]?.url || "";
+        } catch (e: any) {
+            throw new Error(`OpenAI Image Failed: ${e.message}`);
+        }
     }
-
-    return content;
-} catch (e: any) {
-    throw new Error(`${provider} Generation Failed: ${e.message}`);
-}
-    }
-
-    private async generateOpenAIImage(prompt: string): Promise < string > {
-    const apiKey = this.settings.keys.openai;
-    if(!apiKey) throw new Error("OpenAI API Key missing.");
-
-    try {
-        const response = await fetch('https://api.openai.com/v1/images/generations', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${apiKey}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                model: "dall-e-3", // Force DALL-E 3 for quality
-                prompt: prompt,
-                n: 1,
-                size: "1024x1024",
-                quality: "standard"
-            })
-        });
-
-        if(!response.ok) throw new Error(`OpenAI Image Error: ${response.status}`);
-        const data = await response.json();
-        return data.data?.[0]?.url || "";
-    } catch(e: any) {
-        throw new Error(`OpenAI Image Failed: ${e.message}`);
-    }
-}
 
     // =================================================================================
     // ANTHROPIC IMPLEMENTATION (Direct API)
     // =================================================================================
 
-    private async generateAnthropicText(prompt: string, systemInstruction ?: string): Promise < string > {
-    const apiKey = this.settings.keys.anthropic;
-    if(!apiKey) throw new Error("Anthropic API Key missing.");
+    private async generateAnthropicText(prompt: string, systemInstruction?: string): Promise<string> {
+        const apiKey = this.settings.keys.anthropic;
+        if (!apiKey) throw new Error("Anthropic API Key missing.");
 
-    try {
-        const response = await fetch('https://api.anthropic.com/v1/messages', {
-            method: 'POST',
-            headers: {
-                'x-api-key': apiKey,
-                'anthropic-version': '2023-06-01',
-                'content-type': 'application/json',
-                'anthropic-dangerous-direct-browser-access': 'true' // Necessary for client-side apps
-            },
-            body: JSON.stringify({
-                model: this.settings.modelText,
-                max_tokens: this.settings.maxOutputTokens || 4096,
-                temperature: this.settings.temperature,
-                system: systemInstruction,
-                messages: [{ role: 'user', content: prompt }]
-            })
-        });
+        try {
+            const response = await fetch('https://api.anthropic.com/v1/messages', {
+                method: 'POST',
+                headers: {
+                    'x-api-key': apiKey,
+                    'anthropic-version': '2023-06-01',
+                    'content-type': 'application/json',
+                    'anthropic-dangerous-direct-browser-access': 'true' // Necessary for client-side apps
+                },
+                body: JSON.stringify({
+                    model: this.settings.modelText,
+                    max_tokens: this.settings.maxOutputTokens || 4096,
+                    temperature: this.settings.temperature,
+                    system: systemInstruction,
+                    messages: [{ role: 'user', content: prompt }]
+                })
+            });
 
-        if(!response.ok) {
-    const err = await response.text();
-    throw new Error(`Anthropic API Error (${response.status}): ${err}`);
-}
+            if (!response.ok) {
+                const err = await response.text();
+                throw new Error(`Anthropic API Error (${response.status}): ${err}`);
+            }
 
-const data = await response.json();
-// Anthropic returns content array
-if (data.content && Array.isArray(data.content)) {
-    return data.content.filter((c: any) => c.type === 'text').map((c: any) => c.text).join('');
-}
-return "";
+            const data = await response.json();
+            // Anthropic returns content array
+            if (data.content && Array.isArray(data.content)) {
+                return data.content.filter((c: any) => c.type === 'text').map((c: any) => c.text).join('');
+            }
+            return "";
 
         } catch (e: any) {
-    throw new Error(`Anthropic Generation Failed: ${e.message}`);
-}
+            throw new Error(`Anthropic Generation Failed: ${e.message}`);
+        }
     }
 }
