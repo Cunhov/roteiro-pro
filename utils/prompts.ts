@@ -50,37 +50,116 @@ export const getStep2Prompt = (config: ScriptConfiguration, prevResult: string) 
     # PROMPT 2 - ROTEIRO (INTRODUÇÃO)
     **IDIOMA OBRIGATÓRIO:** ${config.targetLanguage}
     **TOM DE VOZ:** ${config.scriptStyle}
+    **DURAÇÃO ALVO:** ${config.videoLength}
+    
+    ## CONCEITO
+    Você vai criar a ABERTURA/INTRODUÇÃO de um vídeo do YouTube.
+    
+    ## ESTRUTURA RECEBIDA (da etapa anterior):
+    ${prevResult.substring(0, 5000)}
+    
     ## TAREFA
-    Escreva o início do roteiro (0:00 até ~2:00 minutos).
-    **INPUT ESTRUTURAL:** ${prevResult}
-    Escreve APENAS o texto da narração.
+    Com base na estrutura acima, escreva a INTRODUÇÃO completa do vídeo (0:00 até ~2:00 minutos).
+    
+    **A introdução deve incluir:**
+    - Gancho inicial (hook) nos primeiros 3-5 segundos
+    - Apresentação rápida do tema/problema
+    - Promessa de valor (o que o espectador vai ganhar)
+    - Breve contextualização se necessário
+    - Transição para o desenvolvimento
+    
+    **FORMATO DE SAÍDA:**
+    Retorne APENAS o texto de narração da introdução, pronto para ser lido.
+    NÃO inclua tags de cena, descrições visuais ou comentários.
+    NÃO use marcadores como [INTRO], [GANCHO], etc.
+    
+    ## RETORNE APENAS O TEXTO DA NARRAÇÃO DA INTRODUÇÃO:
 `;
 
 export const getStep3Prompt = (config: ScriptConfiguration, prevResult: string) => `
-    # PROMPT 3 - ROTEIRO (DESENVOLVIMENTO)
+    # PROMPT 3 - ROTEIRO (DESENVOLVIMENTO/CORPO)
     **IDIOMA OBRIGATÓRIO:** ${config.targetLanguage}
     **TOM DE VOZ:** ${config.scriptStyle}
+    **DURAÇÃO ALVO:** ${config.videoLength}
+    
+    ## CONCEITO
+    Você vai criar o CORPO PRINCIPAL de um vídeo do YouTube.
+    
+    ## ESTRUTURA ESTRATÉGICA (da etapa 1):
+    ${prevResult.substring(0, 5000)}
+    
     ## TAREFA
-    Escreve o CORPO principal do vídeo.
-    (Contexto da estrutura: ${prevResult.substring(0, 500)}...)
-    Escreve APENAS o texto da narração.
+    Com base na estrutura acima, escreva o DESENVOLVIMENTO/CORPO principal do vídeo.
+    Esta é a parte central onde você explica, ensina, argumenta ou conta a história principal.
+    
+    **O corpo deve incluir:**
+    - Desenvolvimento dos pontos principais da estrutura
+    - Exemplos, evidências ou narrativas de suporte
+    - Manutenção do ritmo e engajamento
+    - Elementos de retenção (miniclímax, revelações graduais)
+    - Preparação para a conclusão
+    
+    **FORMATO DE SAÍDA:**
+    Retorne APENAS o texto de narração do corpo principal, pronto para ser lido.
+    NÃO inclua tags de cena, descrições visuais ou comentários.
+    NÃO use marcadores como [DESENVOLVIMENTO], [PONTO 1], etc.
+    
+    ## RETORNE APENAS O TEXTO DA NARRAÇÃO DO CORPO:
 `;
 
 export const getStep4Prompt = (config: ScriptConfiguration, intro: string, body: string) => `
     # PROMPT 4 - INTEGRAÇÃO DE PRODUTO (MID-ROLL)
     **IDIOMA OBRIGATÓRIO:** ${config.targetLanguage}
+    **TOM DE VOZ:** ${config.scriptStyle}
+    
+    ## SUA MISSÃO
+    Você está montando um roteiro de vídeo. Você já tem a INTRODUÇÃO e o CORPO principal.
+    Agora você precisa inserir o CTA do produto no meio do roteiro (mid-roll).
+    
     ## TAREFA
-    Insira CTA do Produto: "${config.productCTA}"
-    INTRO: ${intro}
-    CORPO: ${body}
+    1. Pegue a INTRODUÇÃO e o CORPO abaixo
+    2. Insira o CTA do produto ENTRE eles ou logo após o corpo, de forma NATURAL e integrada ao fluxo
+    3. Faça uma transição suave com frases como "Pausa rápida...", "Antes de continuar...", "E por falar nisso..."
+    4. Apresente o CTA do produto de forma convincente mas não agressiva
+    5. **RETORNE O ROTEIRO COMPLETO** até este ponto (Intro + Corpo + CTA Produto)
+    
+    ## CTA DO PRODUTO:
+    ${config.productCTA}
+    
+    ## INTRODUÇÃO (já escrita):
+    ${intro.substring(0, 15000)}
+    
+    ## CORPO PRINCIPAL (já escrito):
+    ${body.substring(0, 15000)}
+    
+    ## RETORNE APENAS O ROTEIRO COMPLETO (INTRO + CORPO + CTA PRODUTO) SEM COMENTÁRIOS:
 `;
 
 export const getStep5Prompt = (config: ScriptConfiguration, partialScript: string) => `
     # PROMPT 5 - PATROCÍNIO E ENCERRAMENTO
     **IDIOMA OBRIGATÓRIO:** ${config.targetLanguage}
+    **TOM DE VOZ:** ${config.scriptStyle}
+    
+    ## SUA MISSÃO
+    Você está finalizando um roteiro de vídeo. Você já tem todo o conteúdo até o CTA do produto.
+    Agora você precisa adicionar o PATROCÍNIO/SPONSOR e o ENCERRAMENTO.
+    
     ## TAREFA
-    Adicione CTA Patrocínio: "${config.sponsorCTA}" e Conclusão.
-    INPUT: ${partialScript}
+    1. Pegue TODO o roteiro parcial abaixo (que já inclui intro, corpo e CTA produto)
+    2. Após o conteúdo existente, adicione:
+       a) CTA do PATROCINADOR de forma integrada e natural
+       b) CONCLUSÃO do vídeo (resumo, call-to-action final, despedida)
+    3. Use transições naturais antes do patrocínio ("Este vídeo é patrocinado por...", "Antes de finalizar...")
+    4. A conclusão deve amarrar tudo e incentivar engajamento (like, comment, subscribe)
+    5. **RETORNE O ROTEIRO COMPLETO E FINAL** (tudo que você recebeu + patrocínio + conclusão)
+    
+    ## CTA DO PATROCINADOR:
+    ${config.sponsorCTA}
+    
+    ## ROTEIRO PARCIAL (até o CTA do produto):
+    ${partialScript.substring(0, 30000)}
+    
+    ## RETORNE APENAS O ROTEIRO COMPLETO FINAL SEM COMENTÁRIOS OU EXPLICAÇÕES:
 `;
 
 export const getStep6Prompt = (config: ScriptConfiguration, script: string) => `
