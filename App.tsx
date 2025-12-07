@@ -21,8 +21,6 @@ import {
   getStep3Prompt,
   getStep4Prompt,
   getStep5Prompt,
-  getStep6Prompt,
-  getStep7Prompt,
   getPromptFix
 } from './utils/prompts';
 
@@ -118,30 +116,19 @@ const App: React.FC = () => {
       const r2 = await llmGateway.generateText(getStep2Prompt(config, r1));
       updateResult(2, r2);
 
-      // Step 3: Development
+      // Step 3: Development/Body
       const r3 = await llmGateway.generateText(getStep3Prompt(config, r1));
       updateResult(3, r3);
 
-      // Step 4: Product Integration (Mid-Roll)
+      // Step 4: Complete Script (Product CTA + Sponsor + Conclusion) - OPTIMIZED MERGE
       const r4 = await llmGateway.generateText(getStep4Prompt(config, r2, r3));
       updateResult(4, r4);
 
-      // Step 5: Sponsor & Outro
-      const r5 = await llmGateway.generateText(getStep5Prompt(config, r4));
-      updateResult(5, r5);
-
-      // Step 6: Audit
-      let auditScript = r5;
-      const r6 = await llmGateway.generateText(getStep6Prompt(config, r5));
-
-      if (r6.length > r5.length * 0.5 && !r6.includes("APROVADO")) {
-        auditScript = r6;
-      }
-
-      // Auto-Correction Loop
+      // POST-PROCESSING: Audit & Auto-Correction (not counted as pipeline step)
+      let finalScript = r4;
       const validador = new ValidadorRoteiro();
       let attempts = 0;
-      let audit = validador.auditarCompleto(auditScript);
+      let audit = validador.auditarCompleto(finalScript);
 
       while (!audit.aprovado && attempts < 2) {
         attempts++;
@@ -150,19 +137,22 @@ const App: React.FC = () => {
           results: [...prev.results, `⚠️ Auto-Correção de Conteúdo ${attempts}...`]
         }));
 
-        const fixedScript = await llmGateway.generateText(getPromptFix(auditScript, audit.erros));
-        auditScript = fixedScript;
-        audit = validador.auditarCompleto(auditScript);
+        const fixedScript = await llmGateway.generateText(getPromptFix(finalScript, audit.erros));
+        finalScript = fixedScript;
+        audit = validador.auditarCompleto(finalScript);
       }
-      updateResult(6, r6 + (attempts > 0 ? `\n[Corrigido ${attempts}x]` : ""));
 
-      // Step 7: Normalization SSML
-      const r7 = await llmGateway.generateText(getStep7Prompt(config, auditScript));
-      updateResult(7, r7);
+      if (attempts > 0) {
+        updateResult(4, r4 + `\n✅ [Script corrigido ${attempts}x]`);
+      }
+
+      // Step 5: SSML Formatting (was Step 7)
+      const r5 = await llmGateway.generateText(getStep5Prompt(config, finalScript));
+      updateResult(5, r5);
 
       // Generate JSON
       const generator = new GeradorRoteiroJSON();
-      const json = generator.gerarJSON(config.topic || "Tema Gerado", r7, {
+      const json = generator.gerarJSON(config.topic || "Tema Gerado", r5, {
         apresentador: config.narratorName,
         canal: config.channelName,
         idioma: config.targetLanguage
@@ -302,8 +292,8 @@ const App: React.FC = () => {
                         <button
                           onClick={() => setShowSSML(!showSSML)}
                           className={`px-3 py-2 rounded text-xs font-medium transition-colors ${showSSML
-                              ? 'bg-blue-600 text-white'
-                              : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
                             }`}
                           title={showSSML ? 'Mostrar texto sem SSML' : 'Mostrar com tags SSML'}
                         >
