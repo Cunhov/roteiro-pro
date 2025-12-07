@@ -246,17 +246,23 @@ export class LLMGateway {
         if (!apiKey) throw new Error("Poe API Key missing.");
 
         try {
-            // POE uses the images/generations endpoint, not chat/completions for images
-            const response = await fetch('https://api.poe.com/v1/images/generations', {
+            // POE uses /chat/completions with extra_body for images (per user's example)
+            const response = await fetch('https://api.poe.com/v1/chat/completions', {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${apiKey}`,
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'HTTP-Referer': 'https://roteiro-pro.app',
+                    'X-Title': 'Roteiro Pro'
                 },
                 body: JSON.stringify({
                     model: this.settings.modelImage,
-                    prompt: prompt,
-                    aspect_ratio: this.settings.imageAspectRatio || "16:9"
+                    messages: [{ role: 'user', content: prompt }],
+                    extra_body: {
+                        aspect_ratio: this.settings.imageAspectRatio || "16:9",
+                        image_only: true,
+                        image_size: "1K"
+                    }
                 })
             });
 
@@ -266,13 +272,17 @@ export class LLMGateway {
             }
 
             const data = await response.json();
+            const content = data.choices?.[0]?.message?.content || "";
 
-            // POE returns image URL in data array
-            if (data.data && data.data[0] && data.data[0].url) {
-                return data.data[0].url;
-            }
+            // POE returns image in markdown format: ![alt](url)
+            const mdMatch = content.match(/!\[.*?\]\((https?:\/\/.*?)\)/);
+            if (mdMatch && mdMatch[1]) return mdMatch[1];
 
-            throw new Error("No image URL found in Poe response.");
+            // Fallback: try to find any URL in response
+            const urlMatch = content.match(/https?:\/\/[^\s)]+/);
+            if (urlMatch) return urlMatch[0];
+
+            throw new Error(`No image URL found in Poe response. Content: ${content}`);
         } catch (e: any) {
             throw new Error(`Poe Image Generation Failed: ${e.message}`);
         }
