@@ -4,13 +4,17 @@
  */
 
 export const getBRollSegmentationPrompt = (
-    text: string,
-    pacing: string,
-    sourcePref: string,
-    mood?: string,
-    style?: string
+  text: string,
+  pacing: string,
+  sourcePref: string,
+  mood?: string,
+  style?: string
 ) => `
 # AGENTE B-ROLL - Segmentação e Descrição Visual
+
+🚨 **REGRA CRÍTICA:** Sua resposta DEVE ser EXCLUSIVAMENTE um array JSON válido.
+NÃO inclua explicações, NÃO use markdown (sem \`\`\`json), NÃO adicione texto antes ou depois.
+Comece com [ e termine com ]. APENAS JSON.
 
 ## SUA MISSÃO
 Analise o roteiro/legenda fornecido e crie uma sequência de B-Rolls (imagens de apoio visual).
