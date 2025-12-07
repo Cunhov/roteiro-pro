@@ -1,9 +1,9 @@
-
 import React, { useState, useRef } from 'react';
 import { Film, Upload, FileText, X, Loader2, Download, Image as ImageIcon, Search, Wand2, Settings2, PlayCircle } from 'lucide-react';
 import { LLMGateway } from '../services/llmGateway';
 import { BRollSegment, BRollConfig, BRollPacing, BRollSource } from '../types';
 import { getBRollSegmentationPrompt } from '../utils/prompts';
+import { logger } from '../utils/logger';
 import JSZip from 'jszip'; // Using CDN version via type augmentation or implicit global
 
 // Declare JSZip for TypeScript if not installed via npm (CDN usage)
@@ -59,6 +59,15 @@ const BRollCreator: React.FC<BRollCreatorProps> = ({ llmGateway }) => {
 
     const startProcess = async () => {
         if (!inputText.trim()) return;
+
+        logger.info('[B-Roll] Iniciando processo de geração', {
+            textLength: inputText.length,
+            pacing: config.pacing,
+            source: config.source,
+            mood: config.mood,
+            style: config.style
+        });
+
         setIsProcessing(true);
         setSegments([]);
         setError(null);
@@ -66,43 +75,68 @@ const BRollCreator: React.FC<BRollCreatorProps> = ({ llmGateway }) => {
 
         try {
             // 1. Segmentation
+            logger.info('[B-Roll] Enviando prompt para LLM...');
             const prompt = getBRollSegmentationPrompt(inputText, config.pacing, config.source, config.mood, config.style);
+            logger.info('[B-Roll] Prompt gerado', { promptLength: prompt.length });
+
             const jsonResponse = await llmGateway.generateText(prompt);
+            logger.info('[B-Roll] Resposta do LLM recebida', {
+                responseLength: jsonResponse.length,
+                firstChars: jsonResponse.substring(0, 100)
+            });
 
             let parsedSegments: BRollSegment[] = [];
+            let cleanJson = jsonResponse; // Declare outside try for error logging
+
             try {
                 // Try multiple cleanup strategies
-                let cleanJson = jsonResponse;
+                logger.info('[B-Roll] Iniciando limpeza e parsing de JSON...');
 
                 // Remove markdown code blocks
                 cleanJson = cleanJson.replace(/```json\s*/g, '').replace(/```\s*/g, '');
+                logger.info('[B-Roll] Markdown removido');
 
                 // Remove any text before first [ and after last ]
                 const firstBracket = cleanJson.indexOf('[');
                 const lastBracket = cleanJson.lastIndexOf(']');
 
+                logger.info('[B-Roll] Posições de colchetes', { firstBracket, lastBracket });
+
                 if (firstBracket !== -1 && lastBracket !== -1) {
                     cleanJson = cleanJson.substring(firstBracket, lastBracket + 1);
+                    logger.info('[B-Roll] JSON extraído', { extractedLength: cleanJson.length });
                 }
 
                 // Try to parse
+                logger.info('[B-Roll] Tentando fazer parse do JSON...');
                 parsedSegments = JSON.parse(cleanJson);
+                logger.info('[B-Roll] JSON parseado com sucesso!', { segmentCount: parsedSegments.length });
 
                 // Validate it's an array
                 if (!Array.isArray(parsedSegments)) {
-                    throw new Error("Resposta não é um array");
+                    const error = "Resposta não é um array";
+                    logger.error('[B-Roll] Validação falhou: resposta não é array', { type: typeof parsedSegments });
+                    throw new Error(error);
                 }
 
                 // Validate each segment has required fields
                 parsedSegments.forEach((seg, idx) => {
                     if (!seg.id || !seg.timestampStart || !seg.timestampEnd || !seg.visualDescription) {
-                        throw new Error(`Segmento ${idx + 1} está incompleto`);
+                        const error = `Segmento ${idx + 1} está incompleto`;
+                        logger.error('[B-Roll] Segmento inválido', { index: idx, segment: seg });
+                        throw new Error(error);
                     }
                 });
 
+                logger.info('[B-Roll] Todos os segmentos validados com sucesso!');
+
             } catch (e) {
-                console.error("JSON Parse Error:", e);
-                console.error("Raw Response:", jsonResponse);
+                logger.error('[B-Roll] Erro no parsing do JSON', {
+                    error: e instanceof Error ? e.message : 'Erro desconhecido',
+                    responsePreview: jsonResponse.substring(0, 500),
+                    cleanedJson: cleanJson?.substring(0, 500)
+                });
+
                 throw new Error(`Falha ao interpretar resposta da IA (JSON inválido). 
 
 Resposta recebida (primeiros 200 chars):
@@ -115,9 +149,11 @@ Tente novamente ou use outro modelo de IA.`);
 
             // Initialize segments
             setSegments(parsedSegments.map(s => ({ ...s, status: 'pending' })));
+            logger.info('[B-Roll] Segmentos inicializados');
 
             // 2. Process Images (Sequential to avoid rate limits, or batched)
             setProcessingStatus('Gerando/Buscando imagens...');
+            logger.info('[B-Roll] Iniciando geração/busca de imagens');
 
             const newSegments = [...parsedSegments];
 
@@ -125,26 +161,42 @@ Tente novamente ou use outro modelo de IA.`);
                 const segment = newSegments[i];
                 setSegments(prev => prev.map((s, idx) => idx === i ? { ...s, status: 'processing' } : s));
 
+                logger.info(`[B-Roll] Processando segmento ${i + 1}/${newSegments.length}`, {
+                    id: segment.id,
+                    sourceType: segment.sourceType,
+                    description: segment.visualDescription
+                });
+
                 try {
                     let imageUrl = '';
 
                     if (segment.sourceType === 'search') {
                         // Search Logic (Grounding)
+                        logger.info(`[B-Roll] Buscando imagem para segmento ${segment.id}...`);
                         const urls = await llmGateway.searchImages(segment.visualDescription);
+
                         if (urls.length > 0) {
                             imageUrl = urls[0];
+                            logger.info(`[B-Roll] Imagem encontrada via busca`, { url: imageUrl });
                         } else {
                             // Fallback to generation if search fails
+                            logger.warn(`[B-Roll] Busca falhou, gerando imagem...`);
                             imageUrl = await llmGateway.generateImage(segment.visualDescription, config.refImages);
+                            logger.info(`[B-Roll] Imagem gerada como fallback`, { url: imageUrl });
                         }
                     } else {
                         // Generation Logic
+                        logger.info(`[B-Roll] Gerando imagem para segmento ${segment.id}...`);
                         imageUrl = await llmGateway.generateImage(segment.visualDescription, config.refImages);
+                        logger.info(`[B-Roll] Imagem gerada com sucesso`, { url: imageUrl });
                     }
 
                     newSegments[i] = { ...segment, imageUrl, status: 'completed' };
                 } catch (err) {
-                    console.error(`Error processing segment ${segment.id}`, err);
+                    logger.error(`[B-Roll] Erro ao processar segmento ${segment.id}`, {
+                        error: err instanceof Error ? err.message : 'Erro desconhecido',
+                        segment: segment
+                    });
                     newSegments[i] = { ...segment, status: 'failed' };
                 }
 
@@ -153,8 +205,17 @@ Tente novamente ou use outro modelo de IA.`);
             }
 
             setProcessingStatus('Concluído!');
+            logger.info('[B-Roll] Processo concluído com sucesso!', {
+                total: newSegments.length,
+                completed: newSegments.filter(s => s.status === 'completed').length,
+                failed: newSegments.filter(s => s.status === 'failed').length
+            });
 
         } catch (err: any) {
+            logger.error('[B-Roll] Erro fatal no processo', {
+                error: err.message || 'Erro desconhecido',
+                stack: err.stack
+            });
             setError(err.message || "Erro desconhecido no processo.");
         } finally {
             setIsProcessing(false);

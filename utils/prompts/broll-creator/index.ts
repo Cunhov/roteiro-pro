@@ -77,7 +77,7 @@ RETORNE APENAS UM ARRAY JSON SEM MARKDOWN, seguindo este formato:
 ## IMPORTANTE
 - Timestamps no formato SRT: HH:MM:SS,mmm
 - IDs sequenciais com 3 dígitos (001, 002, 003...)
-- Array JSON puro, SEM ```json``` ou markdown
+- Array JSON puro, SEM blocos de código markdown
 - Mínimo de 3 segmentos, máximo de 20
 - Se o texto tiver timestamps SRT, use-os. Senão, crie baseado no ritmo
 

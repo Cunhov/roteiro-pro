@@ -11,10 +11,12 @@ import Settings from './components/Settings';
 import InputSection from './components/InputSection';
 import StepDisplay from './components/StepDisplay';
 import AudioGeneratorModal from './components/AudioGeneratorModal';
+import DebugConsole, { LogEntry } from './components/DebugConsole';
 import { PROCESSING_STEPS, ScriptState, ScriptConfiguration, AppView, DEFAULT_LLM_SETTINGS, LLMSettings } from './types';
 import { LLMGateway } from './services/llmGateway';
 import { loadSettingsFromStorage, saveSettingsToStorage } from './services/storageService';
 import { GeradorRoteiroJSON, ValidadorRoteiro } from './utils/validators';
+import { logger } from './utils/logger';
 import {
   getStep1Prompt,
   getStep2Prompt,
@@ -43,6 +45,17 @@ const App: React.FC = () => {
   const [activeView, setActiveView] = useState<AppView>('script-generator');
   const [copied, setCopied] = useState(false);
   const [showSSML, setShowSSML] = useState(true);
+
+  // --- DEBUG CONSOLE ---
+  const [logs, setLogs] = useState<LogEntry[]>([]);
+
+  useEffect(() => {
+    // Subscribe to logger
+    const unsubscribe = logger.subscribe((entry) => {
+      setLogs((prev) => [...prev, entry]);
+    });
+    return unsubscribe;
+  }, []);
 
   // --- LLM CONFIG ---
   const [llmSettings, setLlmSettings] = useState<LLMSettings>(DEFAULT_LLM_SETTINGS);
@@ -363,8 +376,8 @@ const App: React.FC = () => {
                         onClick={applyDanielCunhaStyle}
                         disabled={isApplyingDanielCunha || !!danielCunhaScript}
                         className={`p-4 rounded-lg border-2 transition-all ${danielCunhaScript
-                            ? 'bg-green-900/30 border-green-600 cursor-default'
-                            : 'bg-slate-800 border-purple-600 hover:bg-purple-900/40 hover:border-purple-500'
+                          ? 'bg-green-900/30 border-green-600 cursor-default'
+                          : 'bg-slate-800 border-purple-600 hover:bg-purple-900/40 hover:border-purple-500'
                           } ${isApplyingDanielCunha ? 'opacity-50 cursor-wait' : ''}`}
                       >
                         <div className="flex items-center gap-3 mb-2">
@@ -387,8 +400,8 @@ const App: React.FC = () => {
                         onClick={applySSMLFormatting}
                         disabled={isApplyingSSML || !!ssmlScript}
                         className={`p-4 rounded-lg border-2 transition-all ${ssmlScript
-                            ? 'bg-green-900/30 border-green-600 cursor-default'
-                            : 'bg-slate-800 border-blue-600 hover:bg-blue-900/40 hover:border-blue-500'
+                          ? 'bg-green-900/30 border-green-600 cursor-default'
+                          : 'bg-slate-800 border-blue-600 hover:bg-blue-900/40 hover:border-blue-500'
                           } ${isApplyingSSML ? 'opacity-50 cursor-wait' : ''}`}
                       >
                         <div className="flex items-center gap-3 mb-2">
@@ -485,11 +498,20 @@ const App: React.FC = () => {
         </main>
       </div>
 
-      <AudioGeneratorModal
-        isOpen={isAudioModalOpen}
-        onClose={() => setIsAudioModalOpen(false)}
-        initialText={audioInitialText}
+      {/* Debug Console */}
+      <DebugConsole
+        logs={logs}
+        onClear={() => setLogs([])}
       />
+
+      {/* Audio Modal */}
+      {isAudioModalOpen && (
+        <AudioGeneratorModal
+          initialText={audioInitialText}
+          llmGateway={llmGateway}
+          onClose={() => setIsAudioModalOpen(false)}
+        />
+      )}
     </div>
   );
 };
